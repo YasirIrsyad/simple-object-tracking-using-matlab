@@ -1,3 +1,4 @@
+Found this code on the internet for everyone to try
 %clear all memories
 clc; clear;
 close all; 
