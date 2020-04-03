@@ -1,2 +1,76 @@
 # simple-object-tracking-using-matlab
 It is a code that I found on the internet to track red object
+
+%clear all memories
+clc; clear;
+close all; 
+
+%find video input objects in memory
+objects = imaqfind;
+
+%delete a video input object from memory
+delete(objects)
+
+%capture the video frames using video input function
+vid=videoinput('winvideo',1);
+
+%set the properties of the video object
+set(vid,'FramesPerTrigger',inf);
+set(vid,'ReturnedColorspace','rgb');
+vid.FrameGrabInterval=5;
+
+%video acquisitions start here
+start(vid);
+
+%set a loop that will stop 300 frames of acquisition
+while(vid.FramesAcquired<=200)
+    
+    %get the snapshot of the current frame
+    data=getsnapshot(vid);
+    
+    %track red object in real time
+    %have to substract red component
+    %from the grayscale image to extract red components in the image
+    diff_im=imsubtract(data(:,:,1),rgb2gray(data));
+    
+    %use median filter to filter out noise
+    diff_im=medfilt2(diff_im, [3,3]);
+    
+    %convert the resulting grayscale image into binary image
+    diff_im=im2bw(diff_im, 0.18);
+    
+    %remove all pixels less than 300px
+    diff_im=bwareaopen(diff_im, 300);
+    
+    %label all the connected components in the image
+    bw=bwlabel(diff_im, 8);
+    
+    %do the image analysis
+    %get a set of properties for each labeled region
+    stats=regionprops(bw, 'BoundingBox','Centroid');
+    
+    %display the image
+    imshow(data);
+    
+    hold on
+    
+    %a loop to bound the red object into rectangular box
+    for object= 1:length(stats)
+        bb=stats(object).BoundingBox;
+        bc=stats(object).Centroid;
+        
+        rectangle('Position',bb,'EdgeColor','r','LineWidth',2)
+        plot(bc(1),bc(2),'-m+')
+        
+    end
+    
+    hold off
+    
+end
+%both loops end here
+
+%stop the video acquisition
+stop(vid);
+flushdata(vid);
+
+clear all;
